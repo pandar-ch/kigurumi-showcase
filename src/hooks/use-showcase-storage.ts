@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ShowcaseData, ShowcaseItem, ItemImage, DetailBlock } from '@/types/showcase';
-
-const STORAGE_KEY = 'showcase-admin-data';
+import { ShowcaseData, ShowcaseItem } from '@/types/showcase';
+import { showcaseApi, itemsApi } from '@/lib/api';
 
 const getDefaultData = (): ShowcaseData => ({
   title: 'Ma Collection',
@@ -13,85 +12,71 @@ const getDefaultData = (): ShowcaseData => ({
 export const useShowcaseStorage = () => {
   const [data, setData] = useState<ShowcaseData>(getDefaultData());
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load data from localStorage
-  useEffect(() => {
+  // Load data from API
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setData(JSON.parse(stored));
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
+      const showcaseData = await showcaseApi.getData();
+      setData(showcaseData);
+    } catch (err) {
+      console.error('Error loading data:', err);
+      setError(err instanceof Error ? err.message : 'Erreur de chargement');
+      // Keep default data on error
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Save data to localStorage
-  const saveData = useCallback((newData: ShowcaseData) => {
-    const dataToSave = {
-      ...newData,
-      generatedAt: new Date().toISOString(),
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-    setData(dataToSave);
-  }, []);
-
-  // Generate slug from name
-  const generateSlug = (name: string): string => {
-    return name
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-  };
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Create item
-  const createItem = useCallback((item: Omit<ShowcaseItem, 'id' | 'slug' | 'createdAt' | 'updatedAt'>) => {
-    const now = new Date().toISOString();
-    const newItem: ShowcaseItem = {
-      ...item,
-      id: crypto.randomUUID(),
-      slug: generateSlug(item.name),
-      createdAt: now,
-      updatedAt: now,
-    };
-    const newData = {
-      ...data,
-      items: [...data.items, newItem],
-    };
-    saveData(newData);
-    return newItem;
-  }, [data, saveData]);
+  const createItem = useCallback(async (item: Omit<ShowcaseItem, 'id' | 'slug' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const newItem = await itemsApi.create(item);
+      setData(prev => ({
+        ...prev,
+        items: [...prev.items, newItem],
+      }));
+      return newItem;
+    } catch (err) {
+      console.error('Error creating item:', err);
+      throw err;
+    }
+  }, []);
 
   // Update item
-  const updateItem = useCallback((id: string, updates: Partial<Omit<ShowcaseItem, 'id' | 'createdAt'>>) => {
-    const newData = {
-      ...data,
-      items: data.items.map(item =>
-        item.id === id
-          ? {
-              ...item,
-              ...updates,
-              slug: updates.name ? generateSlug(updates.name) : item.slug,
-              updatedAt: new Date().toISOString(),
-            }
-          : item
-      ),
-    };
-    saveData(newData);
-  }, [data, saveData]);
+  const updateItem = useCallback(async (id: string, updates: Partial<Omit<ShowcaseItem, 'id' | 'createdAt'>>) => {
+    try {
+      const updatedItem = await itemsApi.update(id, updates);
+      setData(prev => ({
+        ...prev,
+        items: prev.items.map(item => (item.id === id ? updatedItem : item)),
+      }));
+      return updatedItem;
+    } catch (err) {
+      console.error('Error updating item:', err);
+      throw err;
+    }
+  }, []);
 
   // Delete item
-  const deleteItem = useCallback((id: string) => {
-    const newData = {
-      ...data,
-      items: data.items.filter(item => item.id !== id),
-    };
-    saveData(newData);
-  }, [data, saveData]);
+  const deleteItem = useCallback(async (id: string) => {
+    try {
+      await itemsApi.delete(id);
+      setData(prev => ({
+        ...prev,
+        items: prev.items.filter(item => item.id !== id),
+      }));
+    } catch (err) {
+      console.error('Error deleting item:', err);
+      throw err;
+    }
+  }, []);
 
   // Get item by ID
   const getItem = useCallback((id: string) => {
@@ -99,34 +84,43 @@ export const useShowcaseStorage = () => {
   }, [data]);
 
   // Update collection metadata
-  const updateMetadata = useCallback((title: string, description?: string) => {
-    saveData({
-      ...data,
-      title,
-      description,
-    });
-  }, [data, saveData]);
+  const updateMetadata = useCallback(async (title: string, description?: string) => {
+    try {
+      const updatedData = await showcaseApi.updateMetadata(title, description);
+      setData(updatedData);
+    } catch (err) {
+      console.error('Error updating metadata:', err);
+      throw err;
+    }
+  }, []);
 
-  // Export data for showcase
+  // Export data
   const exportData = useCallback(() => {
     return JSON.stringify(data, null, 2);
   }, [data]);
 
   // Import data
-  const importData = useCallback((jsonString: string) => {
+  const importData = useCallback(async (jsonString: string) => {
     try {
       const imported = JSON.parse(jsonString) as ShowcaseData;
-      saveData(imported);
+      const updatedData = await showcaseApi.importData(imported);
+      setData(updatedData);
       return true;
-    } catch (error) {
-      console.error('Error importing data:', error);
+    } catch (err) {
+      console.error('Error importing data:', err);
       return false;
     }
-  }, [saveData]);
+  }, []);
+
+  // Refresh data from server
+  const refresh = useCallback(() => {
+    return loadData();
+  }, [loadData]);
 
   return {
     data,
     isLoading,
+    error,
     createItem,
     updateItem,
     deleteItem,
@@ -134,5 +128,6 @@ export const useShowcaseStorage = () => {
     updateMetadata,
     exportData,
     importData,
+    refresh,
   };
 };

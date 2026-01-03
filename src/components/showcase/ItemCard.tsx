@@ -70,9 +70,9 @@ const ItemCard = ({ item }: ItemCardProps) => {
               )}
 
               {/* Details */}
-              {item.details.length > 0 && (
+              {item.detailBlocks && item.detailBlocks.length > 0 && (
                 <div className="mt-auto grid gap-3">
-                  {item.details.map((block) => (
+                  {item.detailBlocks.map((block) => (
                     <DetailBlock key={block.id} block={block} />
                   ))}
                 </div>

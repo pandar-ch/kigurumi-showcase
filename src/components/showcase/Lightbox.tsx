@@ -93,8 +93,8 @@ const Lightbox = ({ images, currentIndex, isOpen, onClose, onNavigate }: Lightbo
         onClick={(e) => e.stopPropagation()}
       >
         <img
-          src={images[currentIndex].src}
-          alt={images[currentIndex].alt}
+          src={images[currentIndex].url}
+          alt={images[currentIndex].alt || ''}
           className="max-w-full max-h-[85vh] object-contain rounded-lg"
         />
         

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { ItemImage } from '@/types/showcase';
-import { processImageUpload, reorderImages } from '@/lib/image-utils';
+import { processImageUpload, reorderImages, deleteImage } from '@/lib/image-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Upload, Trash2, GripVertical, Image as ImageIcon } from 'lucide-react';
@@ -32,7 +32,7 @@ export const ImageManager = ({ images, onChange }: ImageManagerProps) => {
         newImages.push(newImage);
         toast({
           title: 'Image ajoutée',
-          description: `${file.name} → ${newImage.id.slice(0, 8)}...`,
+          description: `${file.name} uploadé avec succès`,
         });
       } catch (error) {
         toast({
@@ -50,8 +50,14 @@ export const ImageManager = ({ images, onChange }: ImageManagerProps) => {
     }
   };
 
-  const handleDelete = (id: string) => {
-    onChange(images.filter(img => img.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteImage(id);
+      onChange(images.filter(img => img.id !== id));
+    } catch (error) {
+      // Still remove from list even if server delete fails
+      onChange(images.filter(img => img.id !== id));
+    }
   };
 
   const handleAltChange = (id: string, alt: string) => {
@@ -122,17 +128,17 @@ export const ImageManager = ({ images, onChange }: ImageManagerProps) => {
               <GripVertical className="w-5 h-5 text-muted-foreground cursor-grab" />
               
               <img
-                src={image.src}
-                alt={image.alt}
+                src={image.url}
+                alt={image.alt || ''}
                 className="w-16 h-16 object-cover rounded"
               />
               
               <div className="flex-1 space-y-1">
                 <p className="text-xs text-muted-foreground font-mono">
-                  {image.id.slice(0, 12)}...
+                  {image.id}
                 </p>
                 <Input
-                  value={image.alt}
+                  value={image.alt || ''}
                   onChange={(e) => handleAltChange(image.id, e.target.value)}
                   placeholder="Description de l'image"
                   className="h-8"
