@@ -44,30 +44,35 @@ export const DetailBlockManager = ({ blocks, onChange }: DetailBlockManagerProps
   };
 
   const addItem = (blockId: string) => {
+    const newItem: DetailItem = {
+      id: crypto.randomUUID(),
+      label: '',
+      value: '',
+    };
     onChange(blocks.map(block =>
       block.id === blockId
-        ? { ...block, items: [...block.items, { label: '', value: '' }] }
+        ? { ...block, items: [...block.items, newItem] }
         : block
     ));
   };
 
-  const updateItem = (blockId: string, itemIndex: number, field: keyof DetailItem, value: string) => {
+  const updateItem = (blockId: string, itemId: string, field: 'label' | 'value', value: string) => {
     onChange(blocks.map(block =>
       block.id === blockId
         ? {
             ...block,
-            items: block.items.map((item, idx) =>
-              idx === itemIndex ? { ...item, [field]: value } : item
+            items: block.items.map((item) =>
+              item.id === itemId ? { ...item, [field]: value } : item
             ),
           }
         : block
     ));
   };
 
-  const deleteItem = (blockId: string, itemIndex: number) => {
+  const deleteItem = (blockId: string, itemId: string) => {
     onChange(blocks.map(block =>
       block.id === blockId
-        ? { ...block, items: block.items.filter((_, idx) => idx !== itemIndex) }
+        ? { ...block, items: block.items.filter((item) => item.id !== itemId) }
         : block
     ));
   };
@@ -115,17 +120,17 @@ export const DetailBlockManager = ({ blocks, onChange }: DetailBlockManagerProps
 
             <CollapsibleContent>
               <div className="p-3 space-y-2">
-                {block.items.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2">
+                {block.items.map((item) => (
+                  <div key={item.id} className="flex items-center gap-2">
                     <Input
                       value={item.label}
-                      onChange={(e) => updateItem(block.id, index, 'label', e.target.value)}
+                      onChange={(e) => updateItem(block.id, item.id, 'label', e.target.value)}
                       placeholder="Label"
                       className="flex-1 h-8"
                     />
                     <Input
                       value={item.value}
-                      onChange={(e) => updateItem(block.id, index, 'value', e.target.value)}
+                      onChange={(e) => updateItem(block.id, item.id, 'value', e.target.value)}
                       placeholder="Valeur"
                       className="flex-1 h-8"
                     />
@@ -133,7 +138,7 @@ export const DetailBlockManager = ({ blocks, onChange }: DetailBlockManagerProps
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={() => deleteItem(block.id, index)}
+                      onClick={() => deleteItem(block.id, item.id)}
                       className="text-destructive hover:text-destructive h-8 w-8"
                     >
                       <Trash2 className="w-3 h-3" />

@@ -40,7 +40,7 @@ export const ItemList = ({ items, onEdit, onDelete }: ItemListProps) => {
           <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
             {item.images.length > 0 ? (
               <img
-                src={item.images.sort((a, b) => a.position - b.position)[0].src}
+                src={item.images.sort((a, b) => a.position - b.position)[0].url}
                 alt={item.name}
                 className="w-full h-full object-cover"
               />

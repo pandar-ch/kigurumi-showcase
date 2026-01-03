@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ShowcaseItem, ItemImage, DetailBlock } from '@/types/showcase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,7 @@ export const ItemForm = ({ item, onSave, onCancel }: ItemFormProps) => {
   const [description, setDescription] = useState(item?.description || '');
   const [tags, setTags] = useState<string[]>(item?.tags || []);
   const [images, setImages] = useState<ItemImage[]>(item?.images || []);
-  const [details, setDetails] = useState<DetailBlock[]>(item?.details || []);
+  const [detailBlocks, setDetailBlocks] = useState<DetailBlock[]>(item?.detailBlocks || []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +33,7 @@ export const ItemForm = ({ item, onSave, onCancel }: ItemFormProps) => {
       description,
       tags,
       images,
-      details,
+      detailBlocks,
     });
   };
 
@@ -113,7 +113,7 @@ export const ItemForm = ({ item, onSave, onCancel }: ItemFormProps) => {
       {/* Détails */}
       <section className="space-y-4">
         <h3 className="text-lg font-medium text-primary">Blocs de détails</h3>
-        <DetailBlockManager blocks={details} onChange={setDetails} />
+        <DetailBlockManager blocks={detailBlocks} onChange={setDetailBlocks} />
       </section>
 
       {/* Actions */}

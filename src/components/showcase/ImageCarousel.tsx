@@ -53,8 +53,8 @@ const ImageCarousel = ({
         onClick={() => onImageClick(currentIndex)}
       >
         <img
-          src={images[currentIndex].src}
-          alt={images[currentIndex].alt}
+          src={images[currentIndex].url}
+          alt={images[currentIndex].alt || ''}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </div>
@@ -111,8 +111,8 @@ const ImageCarousel = ({
               }`}
             >
               <img
-                src={image.src}
-                alt={image.alt}
+                src={image.url}
+                alt={image.alt || ''}
                 className="w-full h-full object-cover"
               />
             </button>

@@ -1,44 +1,15 @@
-import SparkMD5 from 'spark-md5';
 import { ItemImage } from '@/types/showcase';
-
-export const computeMD5 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const arrayBuffer = e.target?.result as ArrayBuffer;
-      const spark = new SparkMD5.ArrayBuffer();
-      spark.append(arrayBuffer);
-      resolve(spark.end());
-    };
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
-  });
-};
-
-export const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-};
-
-export const getFileExtension = (filename: string): string => {
-  const parts = filename.split('.');
-  return parts.length > 1 ? `.${parts.pop()?.toLowerCase()}` : '';
-};
+import { imagesApi } from '@/lib/api';
 
 export const processImageUpload = async (
   file: File,
   existingImages: ItemImage[] = []
 ): Promise<ItemImage> => {
-  const md5Hash = await computeMD5(file);
-  const extension = getFileExtension(file.name);
-  const base64 = await fileToBase64(file);
+  // Upload to server
+  const { url, filename } = await imagesApi.upload(file);
   
-  // Check if image already exists
-  const existingImage = existingImages.find(img => img.id === md5Hash);
+  // Check if image already exists by URL
+  const existingImage = existingImages.find(img => img.url === url);
   if (existingImage) {
     throw new Error('Cette image existe déjà');
   }
@@ -46,8 +17,8 @@ export const processImageUpload = async (
   const maxPosition = existingImages.reduce((max, img) => Math.max(max, img.position), 0);
 
   return {
-    id: md5Hash,
-    src: base64,
+    id: filename,
+    url,
     alt: file.name.replace(/\.[^/.]+$/, ''),
     position: maxPosition + 1,
   };
@@ -63,4 +34,8 @@ export const reorderImages = (images: ItemImage[], fromIndex: number, toIndex: n
     ...img,
     position: index + 1,
   }));
+};
+
+export const deleteImage = async (filename: string): Promise<void> => {
+  await imagesApi.delete(filename);
 };

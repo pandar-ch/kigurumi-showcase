@@ -1,11 +1,12 @@
 export interface ItemImage {
   id: string;
-  src: string;
-  alt: string;
+  url: string;
+  alt?: string;
   position: number;
 }
 
 export interface DetailItem {
+  id: string;
   label: string;
   value: string;
 }
@@ -25,7 +26,7 @@ export interface ShowcaseItem {
   description?: string;
   tags: string[];
   images: ItemImage[];
-  details: DetailBlock[];
+  detailBlocks: DetailBlock[];
   createdAt: string;
   updatedAt: string;
 }
