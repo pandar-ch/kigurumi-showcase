@@ -1,35 +1,25 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ShowcaseData } from "@/types/showcase";
-import { showcaseData as defaultData } from "@/data/showcase-data";
+import { useShowcaseStorage } from "@/hooks/use-showcase-storage";
 import NavHeader from "@/components/showcase/NavHeader";
 import ItemCard from "@/components/showcase/ItemCard";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 
-const STORAGE_KEY = 'showcase-admin-data';
-
 const Index = () => {
-  const [data, setData] = useState<ShowcaseData | null>(null);
+  const { data, isLoading, error } = useShowcaseStorage();
 
-  useEffect(() => {
-    // Try to load from localStorage first, fallback to default data
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setData(JSON.parse(stored));
-      } catch {
-        setData(defaultData);
-      }
-    } else {
-      setData(defaultData);
-    }
-  }, []);
-
-  if (!data) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Chargement...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-destructive">Erreur: {error}</div>
       </div>
     );
   }
